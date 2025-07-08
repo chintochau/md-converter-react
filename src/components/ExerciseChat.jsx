@@ -254,18 +254,29 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                       )}
                     </div>
                     <div className="message-content">
-                      {(message.isStreaming || message.isLoading) ? (
+                      {message.isLoading ? (
                         <div className="typing-indicator">
                           <span className="typing-dot"></span>
                           <span className="typing-dot"></span>
                           <span className="typing-dot"></span>
                         </div>
-                      ) : message.responseHtml ? (
-                        <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
                       ) : (
-                        <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                          {message.response || 'No content available'}
-                        </pre>
+                        <>
+                          {message.responseHtml ? (
+                            <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
+                          ) : (
+                            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                              {message.response || 'No content available'}
+                            </pre>
+                          )}
+                          {message.isStreaming && (
+                            <div className="typing-indicator inline">
+                              <span className="typing-dot"></span>
+                              <span className="typing-dot"></span>
+                              <span className="typing-dot"></span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
