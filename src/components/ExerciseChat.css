@@ -1,9 +1,10 @@
 .exercise-chat {
   background: white;
   padding: 0;
-  height: calc(100vh - 80px);
+  height: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 
