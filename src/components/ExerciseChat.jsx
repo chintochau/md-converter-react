@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { marked } from 'marked'
 import { fetchExercisePlan } from '../services/api'
 import ExerciseList from './ExerciseList'
@@ -10,31 +10,118 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   const [error, setError] = useState(null)
   const [response, setResponse] = useState(null)
   const [messages, setMessages] = useState([])
+  const [useStreaming, setUseStreaming] = useState(true)
+  const abortControllerRef = useRef(null)
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!query.trim()) return
-
-    setLoading(true)
-    setError(null)
+  const handleStreamingResponse = async (userQuery) => {
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+    
+    const newMessage = {
+      id: Date.now(),
+      query: userQuery,
+      response: '',
+      responseHtml: '',
+      exercises: [],
+      timestamp: new Date().toLocaleTimeString(),
+      isStreaming: true
+    }
+    
+    setMessages(prev => [...prev, newMessage])
     
     try {
-      const data = await fetchExercisePlan(query, sessionId)
+      const response = await fetch(
+        `http://localhost:3000/api/v1.2/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`,
+        {
+          headers: {
+            'x-api-key': 'wibbi-api-key'
+          },
+          signal: abortController.signal
+        }
+      )
       
-      // Parse the markdown output to HTML
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      let finalData = {}
+      
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        
+        for (const line of lines) {
+          if (line.startsWith('event:')) {
+            continue
+          }
+          
+          if (line.startsWith('data:')) {
+            try {
+              const data = JSON.parse(line.substring(5))
+              
+              if (data.output) {
+                finalData = data
+                marked.setOptions({ breaks: true, gfm: true })
+                const outputHtml = marked.parse(data.output)
+                
+                setMessages(prev => prev.map(msg => 
+                  msg.id === newMessage.id 
+                    ? { ...msg, response: data.output, responseHtml: outputHtml, isStreaming: false }
+                    : msg
+                ))
+              }
+              
+              if (data.session_id) setSessionId(data.session_id)
+              if (data.model) setModel(data.model)
+            } catch (err) {
+              console.error('Error parsing SSE data:', err)
+            }
+          }
+        }
+      }
+      
+      // Final update with exercises if available
+      if (finalData.result) {
+        setResponse(finalData)
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id 
+            ? { ...msg, exercises: finalData.result, isStreaming: false }
+            : msg
+        ))
+      }
+    } catch (err) {
+      if (err.name !== 'AbortError') {
+        setError(err.message)
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id 
+            ? { ...msg, response: `Error: ${err.message}`, isStreaming: false }
+            : msg
+        ))
+      }
+    } finally {
+      abortControllerRef.current = null
+    }
+  }
+  
+  const handleNormalResponse = async (userQuery) => {
+    try {
+      const data = await fetchExercisePlan(userQuery, sessionId)
+      
       if (data.output) {
-        // Configure marked for better rendering
-        marked.setOptions({
-          breaks: true,
-          gfm: true,
-        })
+        marked.setOptions({ breaks: true, gfm: true })
         data.outputHtml = marked.parse(data.output)
       }
       
-      // Add message to chat history
       const newMessage = {
         id: Date.now(),
-        query: query,
+        query: userQuery,
         response: data.output,
         responseHtml: data.outputHtml,
         exercises: data.result || [],
@@ -43,18 +130,37 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
       
       setMessages(prev => [...prev, newMessage])
       setResponse(data)
-      setQuery('') // Clear input after successful submission
       
-      // Update session info from response
-      if (data.session_id) {
-        setSessionId(data.session_id)
-      }
-      if (data.model) {
-        setModel(data.model)
-      }
+      if (data.session_id) setSessionId(data.session_id)
+      if (data.model) setModel(data.model)
     } catch (err) {
       setError(err.message)
+    }
+  }
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!query.trim()) return
+
+    setLoading(true)
+    setError(null)
+    const userQuery = query
+    setQuery('')
+    
+    try {
+      if (useStreaming) {
+        await handleStreamingResponse(userQuery)
+      } else {
+        await handleNormalResponse(userQuery)
+      }
     } finally {
+      setLoading(false)
+    }
+  }
+  
+  const cancelStream = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
       setLoading(false)
     }
   }
@@ -80,7 +186,11 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                   <div className="assistant-message">
                     <span className="message-label">Assistant:</span>
                     <div className="message-content">
-                      {message.responseHtml ? (
+                      {message.isStreaming ? (
+                        <div className="streaming-indicator">
+                          <span className="typing-dots">Generating response...</span>
+                        </div>
+                      ) : message.responseHtml ? (
                         <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
                       ) : (
                         <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
@@ -100,6 +210,16 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                 Error: {error}
               </div>
             )}
+            <div className="streaming-toggle">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={useStreaming}
+                  onChange={(e) => setUseStreaming(e.target.checked)}
+                />
+                Use streaming response
+              </label>
+            </div>
             <div className="input-group">
               <input
                 type="text"
@@ -109,9 +229,15 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                 className="query-input"
                 disabled={loading}
               />
-              <button type="submit" disabled={loading || !query.trim()}>
-                {loading ? 'Generating...' : 'Send'}
-              </button>
+              {loading && useStreaming ? (
+                <button type="button" onClick={cancelStream} className="cancel-button">
+                  Cancel
+                </button>
+              ) : (
+                <button type="submit" disabled={loading || !query.trim()}>
+                  {loading ? 'Generating...' : 'Send'}
+                </button>
+              )}
             </div>
           </form>
         </div>
