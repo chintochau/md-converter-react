@@ -10,6 +10,8 @@ function App() {
   const [rawContent, setRawContent] = useState(INITIAL_CONTENT)
   const [conversionMethod, setConversionMethod] = useState('replace')
   const [htmlOutput, setHtmlOutput] = useState('')
+  const [sessionId, setSessionId] = useState(null)
+  const [model, setModel] = useState(null)
 
   const convertContent = () => {
     let cleanedContent = ''
@@ -71,18 +73,35 @@ function App() {
   return (
     <div className={`app ${activeTab === 'exercise' ? 'app-fullwidth' : ''}`}>
       <div className="tab-navigation">
-        <button 
-          className={`tab ${activeTab === 'converter' ? 'active' : ''}`}
-          onClick={() => setActiveTab('converter')}
-        >
-          Markdown Converter
-        </button>
-        <button 
-          className={`tab ${activeTab === 'exercise' ? 'active' : ''}`}
-          onClick={() => setActiveTab('exercise')}
-        >
-          Exercise Plan Generator
-        </button>
+        <div className="tabs-left">
+          <button 
+            className={`tab ${activeTab === 'converter' ? 'active' : ''}`}
+            onClick={() => setActiveTab('converter')}
+          >
+            Markdown Converter
+          </button>
+          <button 
+            className={`tab ${activeTab === 'exercise' ? 'active' : ''}`}
+            onClick={() => setActiveTab('exercise')}
+          >
+            Exercise Plan Generator
+          </button>
+        </div>
+        {activeTab === 'exercise' && sessionId && (
+          <div className="session-info">
+            <span className="session-id">Session: {sessionId}</span>
+            {model && <span className="model-info">Model: {model}</span>}
+            <button 
+              className="new-session-btn" 
+              onClick={() => {
+                setSessionId(null)
+                setModel(null)
+              }}
+            >
+              New Session
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTab === 'converter' ? (
@@ -148,7 +167,12 @@ function App() {
           </div>
         </div>
       ) : (
-        <ExerciseChat />
+        <ExerciseChat 
+          sessionId={sessionId} 
+          setSessionId={setSessionId}
+          model={model}
+          setModel={setModel}
+        />
       )}
     </div>
   )

@@ -1,11 +1,17 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1.2'
 const API_KEY = import.meta.env.VITE_API_KEY || 'wibbi-api-key'
 
-export const fetchExercisePlan = async (prompt) => {
+export const fetchExercisePlan = async (prompt, sessionId = null) => {
   try {
+    const requestBody = { prompt };
+    if (sessionId) {
+      requestBody.session_id = sessionId;
+    }
+    
     console.log('Fetching exercise plan with:', {
       url: `${API_BASE_URL}/exercises/chat`,
-      prompt: prompt
+      prompt: prompt,
+      session_id: sessionId
     });
     
     const response = await fetch(`${API_BASE_URL}/exercises/chat`, {
@@ -15,7 +21,7 @@ export const fetchExercisePlan = async (prompt) => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ prompt }),
+      body: JSON.stringify(requestBody),
     })
 
     if (!response.ok) {

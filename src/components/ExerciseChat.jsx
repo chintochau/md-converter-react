@@ -4,7 +4,7 @@ import { fetchExercisePlan } from '../services/api'
 import ExerciseList from './ExerciseList'
 import './ExerciseChat.css'
 
-function ExerciseChat() {
+function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -19,7 +19,7 @@ function ExerciseChat() {
     setError(null)
     
     try {
-      const data = await fetchExercisePlan(query)
+      const data = await fetchExercisePlan(query, sessionId)
       
       // Parse the markdown output to HTML
       if (data.output) {
@@ -44,6 +44,14 @@ function ExerciseChat() {
       setMessages(prev => [...prev, newMessage])
       setResponse(data)
       setQuery('') // Clear input after successful submission
+      
+      // Update session info from response
+      if (data.session_id) {
+        setSessionId(data.session_id)
+      }
+      if (data.model) {
+        setModel(data.model)
+      }
     } catch (err) {
       setError(err.message)
     } finally {
@@ -120,13 +128,6 @@ function ExerciseChat() {
           )}
         </div>
       </div>
-      
-      {response && (
-        <div className="session-info">
-          <span>Session ID: {response.session_id}</span>
-          <span>Model: {response.model}</span>
-        </div>
-      )}
     </div>
   )
 }
