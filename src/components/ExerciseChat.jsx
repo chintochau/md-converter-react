@@ -55,15 +55,19 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
     setMessages(prev => [...prev, newMessage])
     
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/v1.2/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`,
-        {
-          headers: {
-            'x-api-key': 'wibbi-api-key'
-          },
-          signal: abortController.signal
-        }
-      )
+      let url = `http://localhost:3000/api/v1.2/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`
+      
+      // Add session_id if available
+      if (sessionId) {
+        url += `&session_id=${encodeURIComponent(sessionId)}`
+      }
+      
+      const response = await fetch(url, {
+        headers: {
+          'x-api-key': 'wibbi-api-key'
+        },
+        signal: abortController.signal
+      })
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
