@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { marked } from 'marked'
 import { fetchExercisePlan } from '../services/api'
 import ExerciseList from './ExerciseList'
@@ -12,6 +12,12 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   const [messages, setMessages] = useState([])
   const [useStreaming, setUseStreaming] = useState(true)
   const abortControllerRef = useRef(null)
+  const messagesEndRef = useRef(null)
+  
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleStreamingResponse = async (userQuery) => {
     const abortController = new AbortController()
@@ -111,6 +117,19 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   }
   
   const handleNormalResponse = async (userQuery) => {
+    // Add placeholder message with loading state
+    const newMessage = {
+      id: Date.now(),
+      query: userQuery,
+      response: '',
+      responseHtml: '',
+      exercises: [],
+      timestamp: new Date().toLocaleTimeString(),
+      isLoading: true
+    }
+    
+    setMessages(prev => [...prev, newMessage])
+    
     try {
       const data = await fetchExercisePlan(userQuery, sessionId)
       
@@ -119,22 +138,24 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
         data.outputHtml = marked.parse(data.output)
       }
       
-      const newMessage = {
-        id: Date.now(),
-        query: userQuery,
-        response: data.output,
-        responseHtml: data.outputHtml,
-        exercises: data.result || [],
-        timestamp: new Date().toLocaleTimeString()
-      }
-      
-      setMessages(prev => [...prev, newMessage])
+      // Update the message with actual response
+      setMessages(prev => prev.map(msg => 
+        msg.id === newMessage.id 
+          ? { ...msg, response: data.output, responseHtml: data.outputHtml, exercises: data.result || [], isLoading: false }
+          : msg
+      ))
       setResponse(data)
       
       if (data.session_id) setSessionId(data.session_id)
       if (data.model) setModel(data.model)
     } catch (err) {
       setError(err.message)
+      // Update message to show error
+      setMessages(prev => prev.map(msg => 
+        msg.id === newMessage.id 
+          ? { ...msg, response: `Error: ${err.message}`, isLoading: false }
+          : msg
+      ))
     }
   }
   
@@ -186,9 +207,11 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                   <div className="assistant-message">
                     <span className="message-label">Assistant:</span>
                     <div className="message-content">
-                      {message.isStreaming ? (
-                        <div className="streaming-indicator">
-                          <span className="typing-dots">Generating response...</span>
+                      {(message.isStreaming || message.isLoading) ? (
+                        <div className="typing-indicator">
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
+                          <span className="typing-dot"></span>
                         </div>
                       ) : message.responseHtml ? (
                         <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
@@ -202,6 +225,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                 </div>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
           
           <form onSubmit={handleSubmit} className="chat-form">

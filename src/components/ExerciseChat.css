@@ -128,23 +128,48 @@
   background: #dc2626;
 }
 
-.streaming-indicator {
-  display: flex;
+/* Typing indicator with bouncing dots animation
+   Alternative animations you could try:
+   1. Pulse/fade effect: Change animation to just opacity changes
+   2. Wave effect: Dots move in a wave pattern
+   3. Ellipsis style: Show dots appearing one by one (...) 
+   4. Spinner: Replace with a small circular spinner
+   5. Skeleton loader: Show gray bars where content will appear */
+.typing-indicator {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #6b7280;
-  font-style: italic;
+  gap: 4px;
+  padding: 8px 0;
 }
 
-.typing-dots {
-  animation: pulse 1.5s ease-in-out infinite;
+.typing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #6b7280;
+  animation: typing 1.4s ease-in-out infinite;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.5;
+.typing-dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.7;
   }
-  50% {
+  30% {
+    transform: translateY(-10px);
     opacity: 1;
   }
 }
