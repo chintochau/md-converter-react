@@ -12,36 +12,39 @@
 .app h1 {
   text-align: center;
   color: #1f2937;
-  margin-bottom: 30px;
+  margin-bottom: 15px;
+  font-size: 24px;
 }
 
 .app-fullwidth h1 {
-  padding: 20px 20px 0;
+  padding: 10px 20px 0;
+  margin-bottom: 10px;
 }
 
 .tab-navigation {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  border-bottom: 2px solid #e5e7eb;
+  gap: 5px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e5e7eb;
   padding-bottom: 0;
 }
 
 .app-fullwidth .tab-navigation {
   padding: 0 20px;
+  margin-bottom: 0;
 }
 
 .tab {
   background: transparent;
   border: none;
-  padding: 12px 24px;
-  font-size: 16px;
+  padding: 8px 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   transition: all 0.2s;
-  margin-bottom: -2px;
+  margin-bottom: -1px;
 }
 
 .tab:hover {

@@ -53,8 +53,6 @@ function ExerciseChat() {
 
   return (
     <div className="exercise-chat">
-      <h2>Exercise Plan Generator</h2>
-      
       <div className="chat-layout">
         {/* Chat Section - Left Side */}
         <div className="chat-section">
