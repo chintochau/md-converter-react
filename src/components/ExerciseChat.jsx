@@ -25,17 +25,32 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   const processImageUrls = (text) => {
     if (!text) return text
     
-    // Pattern to match image URLs (common image extensions)
-    const imageUrlPattern = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp))(?:\s|$)/gi
+    // Debug: Log the original text to see what we're working with
+    console.log('Processing text for images:', text.substring(0, 200) + '...')
     
-    // Replace image URLs with markdown image syntax
-    return text.replace(imageUrlPattern, (match, url) => {
+    // First, convert markdown links to images if they point to image files
+    // Pattern: [any text](url ending with image extension)
+    const markdownLinkToImagePattern = /\[([^\]]+)\]\((https?:\/\/[^\)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\)]*)?)\)/gi
+    text = text.replace(markdownLinkToImagePattern, (match, linkText, url) => {
+      console.log('Converting link to image:', match)
+      return `![${linkText}](${url})`
+    })
+    
+    // Then, convert standalone image URLs to markdown image syntax
+    // Pattern to match image URLs (common image extensions)
+    const imageUrlPattern = /(?<![(\[])(https?:\/\/[^\s\)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s\)]*)?)(?![)\]])/gi
+    
+    // Replace standalone image URLs with markdown image syntax
+    text = text.replace(imageUrlPattern, (match, url) => {
       // Check if it's already in markdown image syntax
       if (text.includes(`![`) && text.includes(`](${url})`)) {
         return match
       }
-      return `![Image](${url}) `
+      console.log('Converting URL to image:', url)
+      return `![Image](${url})`
     })
+    
+    return text
   }
 
   const handleStreamingResponse = async (userQuery) => {
