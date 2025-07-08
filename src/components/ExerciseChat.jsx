@@ -11,6 +11,8 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   const [response, setResponse] = useState(null)
   const [messages, setMessages] = useState([])
   const [useStreaming, setUseStreaming] = useState(true)
+  const [rightPanelTab, setRightPanelTab] = useState('exercises')
+  const [expandedMessage, setExpandedMessage] = useState(null)
   const abortControllerRef = useRef(null)
   const messagesEndRef = useRef(null)
   
@@ -18,6 +20,23 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+  
+  // Convert image URLs to markdown image syntax
+  const processImageUrls = (text) => {
+    if (!text) return text
+    
+    // Pattern to match image URLs (common image extensions)
+    const imageUrlPattern = /(https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp))(?:\s|$)/gi
+    
+    // Replace image URLs with markdown image syntax
+    return text.replace(imageUrlPattern, (match, url) => {
+      // Check if it's already in markdown image syntax
+      if (text.includes(`![`) && text.includes(`](${url})`)) {
+        return match
+      }
+      return `![Image](${url}) `
+    })
+  }
 
   const handleStreamingResponse = async (userQuery) => {
     const abortController = new AbortController()
@@ -74,12 +93,19 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
               
               if (data.output) {
                 finalData = data
-                marked.setOptions({ breaks: true, gfm: true })
-                const outputHtml = marked.parse(data.output)
+                marked.setOptions({ 
+                  breaks: true, 
+                  gfm: true,
+                  // Enable images to be displayed
+                  sanitize: false
+                })
+                // Process image URLs before parsing
+                const processedOutput = processImageUrls(data.output)
+                const outputHtml = marked.parse(processedOutput)
                 
                 setMessages(prev => prev.map(msg => 
                   msg.id === newMessage.id 
-                    ? { ...msg, response: data.output, responseHtml: outputHtml, isStreaming: false }
+                    ? { ...msg, response: data.output, responseHtml: outputHtml, isStreaming: true }
                     : msg
                 ))
               }
@@ -94,13 +120,13 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
       }
       
       // Final update with exercises if available
+      setMessages(prev => prev.map(msg => 
+        msg.id === newMessage.id 
+          ? { ...msg, exercises: finalData.result || [], isStreaming: false }
+          : msg
+      ))
       if (finalData.result) {
         setResponse(finalData)
-        setMessages(prev => prev.map(msg => 
-          msg.id === newMessage.id 
-            ? { ...msg, exercises: finalData.result, isStreaming: false }
-            : msg
-        ))
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -134,8 +160,15 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
       const data = await fetchExercisePlan(userQuery, sessionId)
       
       if (data.output) {
-        marked.setOptions({ breaks: true, gfm: true })
-        data.outputHtml = marked.parse(data.output)
+        marked.setOptions({ 
+          breaks: true, 
+          gfm: true,
+          // Enable images to be displayed
+          sanitize: false
+        })
+        // Process image URLs before parsing
+        const processedOutput = processImageUrls(data.output)
+        data.outputHtml = marked.parse(processedOutput)
       }
       
       // Update the message with actual response
@@ -205,7 +238,21 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                     <span className="message-time">{message.timestamp}</span>
                   </div>
                   <div className="assistant-message">
-                    <span className="message-label">Assistant:</span>
+                    <div className="message-header">
+                      <span className="message-label">Assistant:</span>
+                      {!message.isStreaming && !message.isLoading && message.response && (
+                        <button 
+                          className="expand-button"
+                          onClick={() => {
+                            setExpandedMessage(message)
+                            setRightPanelTab('message')
+                          }}
+                          title="Expand message"
+                        >
+                          ⤢
+                        </button>
+                      )}
+                    </div>
                     <div className="message-content">
                       {(message.isStreaming || message.isLoading) ? (
                         <div className="typing-indicator">
@@ -266,16 +313,62 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
           </form>
         </div>
         
-        {/* Exercise List - Right Side */}
+        {/* Right Panel with Tabs */}
         <div className="exercises-section">
-          <h3>Exercises {response && response.result ? `(${response.result.length})` : ''}</h3>
-          {response && response.result && response.result.length > 0 ? (
-            <ExerciseList exercises={response.result} />
-          ) : (
-            <div className="empty-exercises">
-              <p>Exercise details will appear here when you generate a plan.</p>
-            </div>
-          )}
+          <div className="right-panel-tabs">
+            <button 
+              className={`tab-button ${rightPanelTab === 'exercises' ? 'active' : ''}`}
+              onClick={() => setRightPanelTab('exercises')}
+            >
+              Exercises {response && response.result ? `(${response.result.length})` : ''}
+            </button>
+            <button 
+              className={`tab-button ${rightPanelTab === 'message' ? 'active' : ''}`}
+              onClick={() => setRightPanelTab('message')}
+            >
+              Message View
+            </button>
+          </div>
+          
+          <div className="tab-content">
+            {rightPanelTab === 'exercises' ? (
+              response && response.result && response.result.length > 0 ? (
+                <ExerciseList exercises={response.result} />
+              ) : (
+                <div className="empty-exercises">
+                  <p>Exercise details will appear here when you generate a plan.</p>
+                </div>
+              )
+            ) : (
+              expandedMessage ? (
+                <div className="expanded-message">
+                  <div className="expanded-message-header">
+                    <h4>Message from {expandedMessage.timestamp}</h4>
+                    <button 
+                      className="close-button"
+                      onClick={() => setExpandedMessage(null)}
+                      title="Close"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="expanded-message-content">
+                    {expandedMessage.responseHtml ? (
+                      <div dangerouslySetInnerHTML={{ __html: expandedMessage.responseHtml }} />
+                    ) : (
+                      <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                        {expandedMessage.response || 'No content available'}
+                      </pre>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="empty-exercises">
+                  <p>Click the expand button (⤢) on any message to view it here.</p>
+                </div>
+              )
+            )}
+          </div>
         </div>
       </div>
     </div>
