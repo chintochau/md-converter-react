@@ -69,7 +69,7 @@ function App() {
   }, [])
 
   return (
-    <div className="app">
+    <div className={`app ${activeTab === 'exercise' ? 'app-fullwidth' : ''}`}>
       <h1>🏃‍♂️ Fitness Tools</h1>
       
       <div className="tab-navigation">

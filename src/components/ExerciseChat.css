@@ -1,26 +1,22 @@
 .exercise-chat {
   background: white;
-  border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
-  height: calc(100vh - 200px);
+  padding: 0;
+  height: calc(100vh - 140px);
   display: flex;
   flex-direction: column;
 }
 
 .exercise-chat h2 {
   color: #1f2937;
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0;
+  padding: 20px;
   border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 10px;
 }
 
 .chat-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
+  grid-template-columns: 40% 60%;
+  gap: 0;
   flex: 1;
   min-height: 0;
 }
@@ -28,8 +24,7 @@
 .chat-section {
   display: flex;
   flex-direction: column;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border-right: 2px solid #e5e7eb;
   background: #f9fafb;
   overflow: hidden;
 }
@@ -100,8 +95,6 @@
 .exercises-section {
   display: flex;
   flex-direction: column;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
   background: #f9fafb;
   overflow: hidden;
 }
@@ -170,13 +163,13 @@
 
 
 .session-info {
-  margin-top: 20px;
-  padding-top: 20px;
+  padding: 10px 20px;
   border-top: 1px solid #e5e7eb;
   display: flex;
   gap: 30px;
   font-size: 12px;
   color: #6b7280;
+  background: white;
 }
 
 /* Responsive design */
@@ -189,6 +182,11 @@
   .exercise-chat {
     height: auto;
     min-height: 80vh;
+  }
+  
+  .chat-section {
+    border-right: none;
+    border-bottom: 2px solid #e5e7eb;
   }
 }
 

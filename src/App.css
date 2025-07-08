@@ -4,10 +4,19 @@
   padding: 20px;
 }
 
+.app-fullwidth {
+  max-width: 100%;
+  padding: 0;
+}
+
 .app h1 {
   text-align: center;
   color: #1f2937;
   margin-bottom: 30px;
+}
+
+.app-fullwidth h1 {
+  padding: 20px 20px 0;
 }
 
 .tab-navigation {
@@ -16,6 +25,10 @@
   margin-bottom: 30px;
   border-bottom: 2px solid #e5e7eb;
   padding-bottom: 0;
+}
+
+.app-fullwidth .tab-navigation {
+  padding: 0 20px;
 }
 
 .tab {

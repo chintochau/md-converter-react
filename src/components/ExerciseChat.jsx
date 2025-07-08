@@ -112,7 +112,7 @@ function ExerciseChat() {
         
         {/* Exercise List - Right Side */}
         <div className="exercises-section">
-          <h3>Exercises</h3>
+          <h3>Exercises {response && response.result ? `(${response.result.length})` : ''}</h3>
           {response && response.result && response.result.length > 0 ? (
             <ExerciseList exercises={response.result} />
           ) : (

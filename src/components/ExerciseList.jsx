@@ -21,8 +21,6 @@ function ExerciseList({ exercises }) {
 
   return (
     <div className="exercise-list">
-      <h3>Exercise Details ({exercises.length} exercises)</h3>
-      
       <div className="exercises-grid">
         {exercises.map((item, index) => (
           <div key={`${item.id}-${index}`} className="exercise-card">
