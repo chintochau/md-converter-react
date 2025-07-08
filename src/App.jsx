@@ -6,7 +6,7 @@ import './App.css'
 const INITIAL_CONTENT = `# Weekly Exercise Plan: Jumping, Running, & Stretching\\n\\n**Plan Name:** Weekly Exercise Plan  \\n**Plan Type:** Weekly  \\n**Created At:** 2025-07-08  \\n**User Description:** Jumping, running, and stretching exercises for a week, balanced across all levels.  \\n**Total Exercises Included:** 12 (Carefully balanced for intensity, recovery, and safety.)\\n\\n---\\n\\n## Introduction\\n\\nWelcome to your **Weekly Exercise Plan**! This program is designed for a balanced progression of jumping, running, and stretching movements. You'll enhance cardiovascular fitness, muscular power, flexibility, and mobility while following a safe and structured approach.\\n\\n---\\n\\n## Plan Structure & Logic\\n\\n- **Balanced Routine:** Alternates high-intensity activities, moderate running, and flexibility work.\\n- **Progression Focus:** Gradual increase in difficulty and volume.\\n- **Safety First:** All sessions start with a warm-up and end with stretching or cool-down.\\n- **Flexibility:** Adaptable to your schedule—move sessions if needed, but maintain at least one active rest day.`
 
 function App() {
-  const [activeTab, setActiveTab] = useState('converter')
+  const [activeTab, setActiveTab] = useState('exercise')
   const [rawContent, setRawContent] = useState(INITIAL_CONTENT)
   const [conversionMethod, setConversionMethod] = useState('replace')
   const [htmlOutput, setHtmlOutput] = useState('')

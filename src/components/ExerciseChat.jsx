@@ -9,7 +9,7 @@ function ExerciseChat() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [response, setResponse] = useState(null)
-  const [showMarkdown, setShowMarkdown] = useState(true)
+  const [messages, setMessages] = useState([])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -30,7 +30,20 @@ function ExerciseChat() {
         })
         data.outputHtml = marked.parse(data.output)
       }
+      
+      // Add message to chat history
+      const newMessage = {
+        id: Date.now(),
+        query: query,
+        response: data.output,
+        responseHtml: data.outputHtml,
+        exercises: data.result || [],
+        timestamp: new Date().toLocaleTimeString()
+      }
+      
+      setMessages(prev => [...prev, newMessage])
       setResponse(data)
+      setQuery('') // Clear input after successful submission
     } catch (err) {
       setError(err.message)
     } finally {
@@ -42,69 +55,78 @@ function ExerciseChat() {
     <div className="exercise-chat">
       <h2>Exercise Plan Generator</h2>
       
-      <form onSubmit={handleSubmit} className="query-form">
-        <div className="input-group">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g., create a plan for me, i need jumping, running, and stretching exercises for a week"
-            className="query-input"
-            disabled={loading}
-          />
-          <button type="submit" disabled={loading || !query.trim()}>
-            {loading ? 'Generating...' : 'Generate Plan'}
-          </button>
-        </div>
-      </form>
-
-      {error && (
-        <div className="error-message">
-          Error: {error}
-        </div>
-      )}
-
-      {response && (
-        <div className="response-container">
-          <div className="view-toggle">
-            <button 
-              className={showMarkdown ? 'active' : ''} 
-              onClick={() => setShowMarkdown(true)}
-            >
-              Plan View
-            </button>
-            <button 
-              className={!showMarkdown ? 'active' : ''} 
-              onClick={() => setShowMarkdown(false)}
-            >
-              Exercise List
-            </button>
-          </div>
-
-          {showMarkdown ? (
-            <div className="markdown-output">
-              <h3>Your Exercise Plan</h3>
-              {response.outputHtml ? (
-                <div 
-                  className="plan-content"
-                  dangerouslySetInnerHTML={{ __html: response.outputHtml }}
-                />
-              ) : (
-                <div className="plan-content">
-                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                    {response.output || 'No content available'}
-                  </pre>
+      <div className="chat-layout">
+        {/* Chat Section - Left Side */}
+        <div className="chat-section">
+          <div className="messages-container">
+            {messages.length === 0 ? (
+              <div className="empty-chat">
+                <p>Start a conversation to generate your exercise plan!</p>
+              </div>
+            ) : (
+              messages.map((message) => (
+                <div key={message.id} className="message-group">
+                  <div className="user-message">
+                    <span className="message-label">You:</span>
+                    <div className="message-content">{message.query}</div>
+                    <span className="message-time">{message.timestamp}</span>
+                  </div>
+                  <div className="assistant-message">
+                    <span className="message-label">Assistant:</span>
+                    <div className="message-content">
+                      {message.responseHtml ? (
+                        <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
+                      ) : (
+                        <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                          {message.response || 'No content available'}
+                        </pre>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
-          ) : (
-            <ExerciseList exercises={response.result || []} />
-          )}
-
-          <div className="session-info">
-            <span>Session ID: {response.session_id}</span>
-            <span>Model: {response.model}</span>
+              ))
+            )}
           </div>
+          
+          <form onSubmit={handleSubmit} className="chat-form">
+            {error && (
+              <div className="error-message">
+                Error: {error}
+              </div>
+            )}
+            <div className="input-group">
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="e.g., create a plan for me, i need jumping, running, and stretching exercises for a week"
+                className="query-input"
+                disabled={loading}
+              />
+              <button type="submit" disabled={loading || !query.trim()}>
+                {loading ? 'Generating...' : 'Send'}
+              </button>
+            </div>
+          </form>
+        </div>
+        
+        {/* Exercise List - Right Side */}
+        <div className="exercises-section">
+          <h3>Exercises</h3>
+          {response && response.result && response.result.length > 0 ? (
+            <ExerciseList exercises={response.result} />
+          ) : (
+            <div className="empty-exercises">
+              <p>Exercise details will appear here when you generate a plan.</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {response && (
+        <div className="session-info">
+          <span>Session ID: {response.session_id}</span>
+          <span>Model: {response.model}</span>
         </div>
       )}
     </div>
