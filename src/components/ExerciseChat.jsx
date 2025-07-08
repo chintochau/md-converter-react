@@ -20,8 +20,14 @@ function ExerciseChat() {
     
     try {
       const data = await fetchExercisePlan(query)
+      
       // Parse the markdown output to HTML
       if (data.output) {
+        // Configure marked for better rendering
+        marked.setOptions({
+          breaks: true,
+          gfm: true,
+        })
         data.outputHtml = marked.parse(data.output)
       }
       setResponse(data)
@@ -78,10 +84,18 @@ function ExerciseChat() {
           {showMarkdown ? (
             <div className="markdown-output">
               <h3>Your Exercise Plan</h3>
-              <div 
-                className="plan-content"
-                dangerouslySetInnerHTML={{ __html: response.outputHtml }}
-              />
+              {response.outputHtml ? (
+                <div 
+                  className="plan-content"
+                  dangerouslySetInnerHTML={{ __html: response.outputHtml }}
+                />
+              ) : (
+                <div className="plan-content">
+                  <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
+                    {response.output || 'No content available'}
+                  </pre>
+                </div>
+              )}
             </div>
           ) : (
             <ExerciseList exercises={response.result || []} />
