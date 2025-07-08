@@ -264,11 +264,15 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                         <>
                           {message.responseHtml ? (
                             <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
-                          ) : (
+                          ) : message.response ? (
                             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                              {message.response || 'No content available'}
+                              {message.response}
                             </pre>
-                          )}
+                          ) : message.isStreaming ? (
+                            <span style={{ color: '#6b7280', fontStyle: 'italic' }}>
+                              Thinking...
+                            </span>
+                          ) : null}
                           {message.isStreaming && (
                             <div className="typing-indicator inline">
                               <span className="typing-dot"></span>
@@ -366,11 +370,11 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
                   <div className="expanded-message-content">
                     {expandedMessage.responseHtml ? (
                       <div dangerouslySetInnerHTML={{ __html: expandedMessage.responseHtml }} />
-                    ) : (
+                    ) : expandedMessage.response ? (
                       <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                        {expandedMessage.response || 'No content available'}
+                        {expandedMessage.response}
                       </pre>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               ) : (
