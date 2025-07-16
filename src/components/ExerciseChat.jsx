@@ -73,11 +73,11 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
       // Get the configuration based on the selected environment
       const API_CONFIGS = {
         'production-v1.2': {
-          baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
+          baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
           apiKey: 'wibbi-api-key'
         },
         'production-v1.3': {
-          baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
+          baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
           apiKey: 'wibbi-api-key'
         },
         'localhost-v1.2': {
@@ -98,6 +98,12 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
         url += `&session_id=${encodeURIComponent(sessionId)}`
       }
       
+      console.log('Streaming request to:', {
+        url: url,
+        environment: environment,
+        headers: { 'x-api-key': config.apiKey }
+      })
+      
       const response = await fetch(url, {
         headers: {
           'x-api-key': config.apiKey
@@ -106,7 +112,14 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
       })
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorText = await response.text()
+        console.error('Streaming API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText,
+          url: url
+        })
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`)
       }
       
       const reader = response.body.getReader()
