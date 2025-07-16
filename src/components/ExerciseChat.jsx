@@ -4,7 +4,7 @@ import { fetchExercisePlan } from '../services/api'
 import ExerciseList from './ExerciseList'
 import './ExerciseChat.css'
 
-function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
+function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -30,7 +30,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
     
     // First, convert markdown links to images if they point to image files
     // Pattern: [any text](url ending with image extension)
-    const markdownLinkToImagePattern = /\[([^\]]+)\]\((https?:\/\/[^\)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\)]*)?)\)/gi
+    const markdownLinkToImagePattern = /\[([^\]]+)\]\((https?:\/\/[^)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^)]*)?)\)/gi
     text = text.replace(markdownLinkToImagePattern, (match, linkText, url) => {
       console.log('Converting link to image:', match)
       return `![${linkText}](${url})`
@@ -38,7 +38,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
     
     // Then, convert standalone image URLs to markdown image syntax
     // Pattern to match image URLs (common image extensions)
-    const imageUrlPattern = /(?<![(\[])(https?:\/\/[^\s\)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s\)]*)?)(?![)\]])/gi
+    const imageUrlPattern = /(?<![([])(https?:\/\/[^\s)]+\.(?:jpg|jpeg|png|gif|webp|svg|bmp)(?:\?[^\s)]*)?)(?![)\]])/gi
     
     // Replace standalone image URLs with markdown image syntax
     text = text.replace(imageUrlPattern, (match, url) => {
@@ -70,7 +70,28 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
     setMessages(prev => [...prev, newMessage])
     
     try {
-      let url = `http://localhost:3000/api/v1.2/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`
+      // Get the configuration based on the selected environment
+      const API_CONFIGS = {
+        'production-v1.2': {
+          baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
+          apiKey: 'wibbi-api-key'
+        },
+        'production-v1.3': {
+          baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
+          apiKey: 'wibbi-api-key'
+        },
+        'localhost-v1.2': {
+          baseUrl: 'http://localhost:3000/api/v1.2',
+          apiKey: 'wibbi-api-key'
+        },
+        'localhost-v1.3': {
+          baseUrl: 'http://localhost:3000/api/v1.3',
+          apiKey: 'wibbi-api-key'
+        }
+      }
+      
+      const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
+      let url = `${config.baseUrl}/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`
       
       // Add session_id if available
       if (sessionId) {
@@ -79,7 +100,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
       
       const response = await fetch(url, {
         headers: {
-          'x-api-key': 'wibbi-api-key'
+          'x-api-key': config.apiKey
         },
         signal: abortController.signal
       })
@@ -176,7 +197,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel }) {
     setMessages(prev => [...prev, newMessage])
     
     try {
-      const data = await fetchExercisePlan(userQuery, sessionId)
+      const data = await fetchExercisePlan(userQuery, sessionId, environment)
       
       if (data.output) {
         marked.setOptions({ 

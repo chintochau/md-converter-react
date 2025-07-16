@@ -12,6 +12,7 @@ function App() {
   const [htmlOutput, setHtmlOutput] = useState('')
   const [sessionId, setSessionId] = useState(null)
   const [model, setModel] = useState(null)
+  const [selectedEnvironment, setSelectedEnvironment] = useState('production-v1.2')
 
   const convertContent = () => {
     let cleanedContent = ''
@@ -68,7 +69,7 @@ function App() {
 
   useEffect(() => {
     convertContent()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={`app ${activeTab === 'exercise' ? 'app-fullwidth' : ''}`}>
@@ -86,6 +87,18 @@ function App() {
           >
             Exercise Plan Generator
           </button>
+          {activeTab === 'exercise' && (
+            <select 
+              className="environment-selector"
+              value={selectedEnvironment}
+              onChange={(e) => setSelectedEnvironment(e.target.value)}
+            >
+              <option value="production-v1.2">Production v1.2</option>
+              <option value="production-v1.3">Production v1.3</option>
+              <option value="localhost-v1.2">Localhost v1.2</option>
+              <option value="localhost-v1.3">Localhost v1.3</option>
+            </select>
+          )}
         </div>
         {activeTab === 'exercise' && sessionId && (
           <div className="session-info">
@@ -172,6 +185,7 @@ function App() {
           setSessionId={setSessionId}
           model={model}
           setModel={setModel}
+          environment={selectedEnvironment}
         />
       )}
     </div>

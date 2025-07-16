@@ -46,6 +46,30 @@
 .tabs-left {
   display: flex;
   gap: 5px;
+  align-items: center;
+}
+
+.environment-selector {
+  margin-left: 10px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.environment-selector:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.environment-selector:focus {
+  outline: none;
+  border-color: #9333ea;
+  box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.1);
 }
 
 .session-info {

@@ -1,7 +1,24 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1.2'
-const API_KEY = import.meta.env.VITE_API_KEY || 'wibbi-api-key'
+const API_CONFIGS = {
+  'production-v1.2': {
+    baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
+    apiKey: 'wibbi-api-key'
+  },
+  'production-v1.3': {
+    baseUrl: 'https://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
+    apiKey: 'wibbi-api-key'
+  },
+  'localhost-v1.2': {
+    baseUrl: 'http://localhost:3000/api/v1.2',
+    apiKey: 'wibbi-api-key'
+  },
+  'localhost-v1.3': {
+    baseUrl: 'http://localhost:3000/api/v1.3',
+    apiKey: 'wibbi-api-key'
+  }
+}
 
-export const fetchExercisePlan = async (prompt, sessionId = null) => {
+export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2') => {
+  const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
   try {
     const requestBody = { prompt };
     if (sessionId) {
@@ -9,15 +26,16 @@ export const fetchExercisePlan = async (prompt, sessionId = null) => {
     }
     
     console.log('Fetching exercise plan with:', {
-      url: `${API_BASE_URL}/exercises/chat`,
+      url: `${config.baseUrl}/exercises/chat`,
       prompt: prompt,
-      session_id: sessionId
+      session_id: sessionId,
+      environment: environment
     });
     
-    const response = await fetch(`${API_BASE_URL}/exercises/chat`, {
+    const response = await fetch(`${config.baseUrl}/exercises/chat`, {
       method: 'POST',
       headers: {
-        'x-api-key': API_KEY,
+        'x-api-key': config.apiKey,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
