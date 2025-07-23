@@ -12,7 +12,7 @@
 
 .chat-layout {
   display: grid;
-  grid-template-columns: 40% 60%;
+  grid-template-columns: 30% 70%;
   gap: 0;
   flex: 1;
   min-height: 0;

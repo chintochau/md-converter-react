@@ -5,7 +5,7 @@
 
 .exercises-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   padding: 20px;
 }
@@ -17,11 +17,17 @@
   padding: 12px;
   transition: all 0.2s;
   height: fit-content;
+  cursor: pointer;
+  position: relative;
 }
 
 .exercise-card:hover {
   border-color: #3b82f6;
   box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.1);
+}
+
+.exercise-card.expanded {
+  border-color: #3b82f6;
 }
 
 .exercise-header {
@@ -135,14 +141,51 @@
   color: #92400e;
 }
 
+.expandable-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.expandable-content.expanded {
+  max-height: 500px;
+  transition: max-height 0.3s ease-in;
+}
+
+.expand-indicator {
+  text-align: center;
+  color: #6b7280;
+  font-size: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.exercise-card.expanded .expand-indicator {
+  color: #3b82f6;
+}
+
+@media (max-width: 1600px) {
+  .exercises-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1400px) {
+  .exercises-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
 @media (max-width: 1200px) {
   .exercises-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
   .exercises-grid {
+    grid-template-columns: 1fr;
     padding: 10px;
     gap: 10px;
   }

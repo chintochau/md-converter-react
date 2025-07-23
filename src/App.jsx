@@ -13,6 +13,7 @@ function App() {
   const [sessionId, setSessionId] = useState(null)
   const [model, setModel] = useState(null)
   const [selectedEnvironment, setSelectedEnvironment] = useState('production-v1.2')
+  const [chatKey, setChatKey] = useState(0)
 
   const convertContent = () => {
     let cleanedContent = ''
@@ -109,6 +110,7 @@ function App() {
               onClick={() => {
                 setSessionId(null)
                 setModel(null)
+                setChatKey(prev => prev + 1)
               }}
             >
               New Session
@@ -181,6 +183,7 @@ function App() {
         </div>
       ) : (
         <ExerciseChat 
+          key={chatKey}
           sessionId={sessionId} 
           setSessionId={setSessionId}
           model={model}
