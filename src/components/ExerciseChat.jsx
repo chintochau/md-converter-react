@@ -188,7 +188,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
       // Final update with exercises if available
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
-          ? { ...msg, exercises: finalData.result || [], isStreaming: false }
+          ? { ...msg, exercises: finalData.result || [], isStreaming: false, responseTimestamp: new Date().toLocaleTimeString() }
           : msg
       ))
       if (finalData.result) {
@@ -240,7 +240,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
       // Update the message with actual response
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
-          ? { ...msg, response: data.output, responseHtml: data.outputHtml, exercises: data.result || [], isLoading: false }
+          ? { ...msg, response: data.output, responseHtml: data.outputHtml, exercises: data.result || [], isLoading: false, responseTimestamp: new Date().toLocaleTimeString() }
           : msg
       ))
       setResponse(data)
@@ -349,6 +349,9 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
                         </>
                       )}
                     </div>
+                    {message.responseTimestamp && !message.isLoading && !message.isStreaming && (
+                      <span className="message-time">{message.responseTimestamp}</span>
+                    )}
                   </div>
                 </div>
               ))
