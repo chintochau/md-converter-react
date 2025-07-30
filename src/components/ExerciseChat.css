@@ -95,21 +95,41 @@
   flex-shrink: 0;
 }
 
-.streaming-toggle {
-  margin-bottom: 10px;
+.toggle-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-.streaming-toggle label {
+.toggle-button {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #6b7280;
-  cursor: pointer;
+  gap: 4px;
 }
 
-.streaming-toggle input[type="checkbox"] {
-  cursor: pointer;
+.toggle-button:hover {
+  background: #e5e7eb;
+  border-color: #d1d5db;
+}
+
+.toggle-button.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.toggle-button.active:hover {
+  background: #2563eb;
+  border-color: #2563eb;
 }
 
 .cancel-button {

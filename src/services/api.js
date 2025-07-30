@@ -17,12 +17,15 @@ const API_CONFIGS = {
   }
 }
 
-export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2') => {
+export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2', reasoningMode = false) => {
   const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
   try {
     const requestBody = { prompt };
     if (sessionId) {
       requestBody.session_id = sessionId;
+    }
+    if (reasoningMode) {
+      requestBody.reasoning_mode = true;
     }
     
     console.log('Fetching exercise plan with:', {

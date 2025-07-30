@@ -12,7 +12,7 @@ function App() {
   const [htmlOutput, setHtmlOutput] = useState('')
   const [sessionId, setSessionId] = useState(null)
   const [model, setModel] = useState(null)
-  const [selectedEnvironment, setSelectedEnvironment] = useState('production-v1.2')
+  const [selectedEnvironment, setSelectedEnvironment] = useState('production-v1.3')
   const [chatKey, setChatKey] = useState(0)
 
   const convertContent = () => {
@@ -79,8 +79,9 @@ function App() {
           <button 
             className={`tab ${activeTab === 'converter' ? 'active' : ''}`}
             onClick={() => setActiveTab('converter')}
+            title="Markdown Converter"
           >
-            Markdown Converter
+            📝
           </button>
           <button 
             className={`tab ${activeTab === 'exercise' ? 'active' : ''}`}
@@ -94,9 +95,7 @@ function App() {
               value={selectedEnvironment}
               onChange={(e) => setSelectedEnvironment(e.target.value)}
             >
-              <option value="production-v1.2">Production v1.2</option>
               <option value="production-v1.3">Production v1.3</option>
-              <option value="localhost-v1.2">Localhost v1.2</option>
               <option value="localhost-v1.3">Localhost v1.3</option>
             </select>
           )}

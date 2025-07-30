@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { marked } from 'marked'
 import { fetchExercisePlan } from '../services/api'
 import ExerciseList from './ExerciseList'
+import { Zap, Brain } from 'lucide-react'
 import './ExerciseChat.css'
 
 function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
@@ -11,6 +12,7 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
   const [response, setResponse] = useState(null)
   const [messages, setMessages] = useState([])
   const [useStreaming, setUseStreaming] = useState(true)
+  const [useReasoning, setUseReasoning] = useState(false)
   const [rightPanelTab, setRightPanelTab] = useState('exercises')
   const [expandedMessage, setExpandedMessage] = useState(null)
   const abortControllerRef = useRef(null)
@@ -96,6 +98,11 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
       // Add session_id if available
       if (sessionId) {
         url += `&session_id=${encodeURIComponent(sessionId)}`
+      }
+      
+      // Add reasoning_mode if enabled
+      if (useReasoning) {
+        url += `&reasoning_mode=true`
       }
       
       console.log('Streaming request to:', {
@@ -210,7 +217,7 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
     setMessages(prev => [...prev, newMessage])
     
     try {
-      const data = await fetchExercisePlan(userQuery, sessionId, environment)
+      const data = await fetchExercisePlan(userQuery, sessionId, environment, useReasoning)
       
       if (data.output) {
         marked.setOptions({ 
@@ -349,15 +356,25 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
                 Error: {error}
               </div>
             )}
-            <div className="streaming-toggle">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={useStreaming}
-                  onChange={(e) => setUseStreaming(e.target.checked)}
-                />
-                Use streaming response
-              </label>
+            <div className="toggle-buttons">
+              <button
+                type="button"
+                className={`toggle-button ${useStreaming ? 'active' : ''}`}
+                onClick={() => setUseStreaming(!useStreaming)}
+                title="Use streaming response"
+              >
+                <Zap size={16} />
+                Stream
+              </button>
+              <button
+                type="button"
+                className={`toggle-button ${useReasoning ? 'active' : ''}`}
+                onClick={() => setUseReasoning(!useReasoning)}
+                title="Reasoning mode"
+              >
+                <Brain size={16} />
+                Reasoning
+              </button>
             </div>
             <div className="input-group">
               <input
@@ -366,7 +383,6 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g., create a plan for me, i need jumping, running, and stretching exercises for a week"
                 className="query-input"
-                disabled={loading}
               />
               {loading && useStreaming ? (
                 <button type="button" onClick={cancelStream} className="cancel-button">
