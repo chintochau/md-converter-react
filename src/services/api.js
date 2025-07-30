@@ -1,4 +1,4 @@
-const API_CONFIGS = {
+export const API_CONFIGS = {
   'production-v1.3': {
     baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
     apiKey: 'wibbi-api-key'
@@ -9,8 +9,8 @@ const API_CONFIGS = {
   }
 }
 
-export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2', reasoningMode = false, model = null) => {
-  const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
+export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.3', reasoningMode = false, model = null) => {
+  const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.3']
   try {
     const requestBody = { prompt };
     if (sessionId) {

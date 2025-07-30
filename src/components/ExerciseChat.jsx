@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { marked } from 'marked'
-import { fetchExercisePlan } from '../services/api'
+import { fetchExercisePlan, API_CONFIGS } from '../services/api'
 import ExerciseList from './ExerciseList'
 import { Zap, Brain } from 'lucide-react'
 import './ExerciseChat.css'
 
-function ExerciseChat({ sessionId, setSessionId, model, setModel, environment }) {
+function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -73,27 +73,8 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
     setMessages(prev => [...prev, newMessage])
     
     try {
-      // Get the configuration based on the selected environment
-      const API_CONFIGS = {
-        'production-v1.2': {
-          baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
-          apiKey: 'wibbi-api-key'
-        },
-        'production-v1.3': {
-          baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
-          apiKey: 'wibbi-api-key'
-        },
-        'localhost-v1.2': {
-          baseUrl: 'http://localhost:3000/api/v1.2',
-          apiKey: 'wibbi-api-key'
-        },
-        'localhost-v1.3': {
-          baseUrl: 'http://localhost:3000/api/v1.3',
-          apiKey: 'wibbi-api-key'
-        }
-      }
-      
-      const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
+      // Get the configuration from the imported API_CONFIGS
+      const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.3']
       let url = `${config.baseUrl}/exercises/chat/stream?prompt=${encodeURIComponent(userQuery)}`
       
       // Add session_id if available
@@ -139,6 +120,8 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
       const decoder = new TextDecoder()
       let buffer = ''
       let finalData = {}
+      let currentEvent = null
+      let currentProgress = {}
       
       while (true) {
         const { done, value } = await reader.read()
@@ -150,6 +133,7 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
         
         for (const line of lines) {
           if (line.startsWith('event:')) {
+            currentEvent = line.substring(6).trim()
             continue
           }
           
@@ -157,15 +141,64 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
             try {
               const data = JSON.parse(line.substring(5))
               
-              if (data.output) {
+              // Handle reasoning mode events
+              if (useReasoning && currentEvent) {
+                if (currentEvent === 'initializeState') {
+                  currentProgress = { status: 'initializing', data: data }
+                } else if (currentEvent === 'reasoningPlanner') {
+                  currentProgress = { 
+                    status: 'planning', 
+                    data: data,
+                    steps: data.reasoning_plan?.steps || []
+                  }
+                } else if (currentEvent === 'reasoningWorker') {
+                  currentProgress = { 
+                    status: 'executing', 
+                    data: data,
+                    executionResults: data.reasoning_execution_results || {}
+                  }
+                } else if (currentEvent === 'reasoningSolver') {
+                  currentProgress = { 
+                    status: 'solving', 
+                    data: data,
+                    output: data.output
+                  }
+                  // Parse and display the final output
+                  if (data.output) {
+                    finalData = data
+                    marked.setOptions({ 
+                      breaks: true, 
+                      gfm: true,
+                      sanitize: false
+                    })
+                    const processedOutput = processImageUrls(data.output)
+                    const outputHtml = marked.parse(processedOutput)
+                    
+                    setMessages(prev => prev.map(msg => 
+                      msg.id === newMessage.id 
+                        ? { ...msg, response: data.output, responseHtml: outputHtml, isStreaming: true, reasoningProgress: currentProgress }
+                        : msg
+                    ))
+                  }
+                }
+                
+                
+                // Update message with current reasoning status
+                setMessages(prev => prev.map(msg => 
+                  msg.id === newMessage.id 
+                    ? { ...msg, reasoningProgress: currentProgress, isStreaming: true }
+                    : msg
+                ))
+              }
+              
+              // Handle normal streaming output
+              if (data.output && !currentEvent) {
                 finalData = data
                 marked.setOptions({ 
                   breaks: true, 
                   gfm: true,
-                  // Enable images to be displayed
                   sanitize: false
                 })
-                // Process image URLs before parsing
                 const processedOutput = processImageUrls(data.output)
                 const outputHtml = marked.parse(processedOutput)
                 
@@ -186,13 +219,40 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
       }
       
       // Final update with exercises if available
+      let exercises = []
+      
+      // Extract exercises from reasoning mode response
+      if (useReasoning && currentProgress.executionResults) {
+        // Collect all exercises from execution results
+        Object.values(currentProgress.executionResults).forEach(result => {
+          if (result.exercises && Array.isArray(result.exercises)) {
+            exercises = [...exercises, ...result.exercises]
+          }
+        })
+        
+        // Remove duplicates based on exercise ID
+        const uniqueExercises = []
+        const seenIds = new Set()
+        exercises.forEach(exercise => {
+          if (!seenIds.has(exercise.id)) {
+            seenIds.add(exercise.id)
+            uniqueExercises.push(exercise)
+          }
+        })
+        exercises = uniqueExercises
+      } else {
+        // Normal mode - use exercises from result
+        exercises = finalData.result || []
+      }
+      
       setMessages(prev => prev.map(msg => 
         msg.id === newMessage.id 
-          ? { ...msg, exercises: finalData.result || [], isStreaming: false, responseTimestamp: new Date().toLocaleTimeString() }
+          ? { ...msg, exercises: exercises, isStreaming: false, responseTimestamp: new Date().toLocaleTimeString() }
           : msg
       ))
-      if (finalData.result) {
-        setResponse(finalData)
+      
+      if (exercises.length > 0 || finalData.result) {
+        setResponse({ ...finalData, result: exercises })
       }
     } catch (err) {
       if (err.name !== 'AbortError') {
@@ -328,18 +388,65 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
                         </div>
                       ) : (
                         <>
+                          {/* Show reasoning progress if available */}
+                          {message.reasoningProgress && useReasoning && !message.response && (
+                            <div className="reasoning-progress">
+                              {message.reasoningProgress.status === 'initializing' && (
+                                <div className="reasoning-step">
+                                  <span className="step-icon">🔄</span>
+                                  <span>Initializing session...</span>
+                                </div>
+                              )}
+                              {message.reasoningProgress.status === 'planning' && (
+                                <div className="reasoning-step">
+                                  <span className="step-icon">📋</span>
+                                  <span>Planning approach...</span>
+                                  {message.reasoningProgress.steps && message.reasoningProgress.steps.length > 0 && (
+                                    <ul className="reasoning-steps">
+                                      {message.reasoningProgress.steps.map((step, idx) => (
+                                        <li key={idx}>{step.description}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              )}
+                              {message.reasoningProgress.status === 'executing' && (
+                                <div className="reasoning-step">
+                                  <span className="step-icon">⚙️</span>
+                                  <span>Executing search queries...</span>
+                                  {Object.keys(message.reasoningProgress.executionResults).length > 0 && (
+                                    <div className="execution-results">
+                                      {Object.entries(message.reasoningProgress.executionResults).map(([stepId, result]) => (
+                                        <div key={stepId} className="execution-item">
+                                          ✓ {stepId}: Found {result.exercises?.length || 0} exercises
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {message.reasoningProgress.status === 'solving' && !message.response && (
+                                <div className="reasoning-step">
+                                  <span className="step-icon">💡</span>
+                                  <span>Generating response...</span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Show the actual response */}
                           {message.responseHtml ? (
                             <div dangerouslySetInnerHTML={{ __html: message.responseHtml }} />
                           ) : message.response ? (
                             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
                               {message.response}
                             </pre>
-                          ) : message.isStreaming ? (
+                          ) : message.isStreaming && !message.reasoningProgress ? (
                             <span style={{ color: '#6b7280', fontStyle: 'italic' }}>
                               Thinking...
                             </span>
                           ) : null}
-                          {message.isStreaming && (
+                          {message.isStreaming && message.response && (
                             <div className="typing-indicator inline">
                               <span className="typing-dot"></span>
                               <span className="typing-dot"></span>
@@ -425,7 +532,11 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
               className={`tab-button ${rightPanelTab === 'exercises' ? 'active' : ''}`}
               onClick={() => setRightPanelTab('exercises')}
             >
-              Exercises {response && response.result ? `(${response.result.length})` : ''}
+              Exercises {(() => {
+                const latestMessage = messages[messages.length - 1]
+                const exercises = latestMessage?.exercises || (response?.result || [])
+                return exercises.length > 0 ? `(${exercises.length})` : ''
+              })()}
             </button>
             <button 
               className={`tab-button ${rightPanelTab === 'message' ? 'active' : ''}`}
@@ -437,13 +548,19 @@ function ExerciseChat({ sessionId, setSessionId, model, setModel, environment })
           
           <div className="tab-content">
             {rightPanelTab === 'exercises' ? (
-              response && response.result && response.result.length > 0 ? (
-                <ExerciseList exercises={response.result} />
-              ) : (
-                <div className="empty-exercises">
-                  <p>Exercise details will appear here when you generate a plan.</p>
-                </div>
-              )
+              (() => {
+                // Get exercises from the most recent message
+                const latestMessage = messages[messages.length - 1]
+                const exercises = latestMessage?.exercises || (response?.result || [])
+                
+                return exercises.length > 0 ? (
+                  <ExerciseList exercises={exercises} />
+                ) : (
+                  <div className="empty-exercises">
+                    <p>Exercise details will appear here when you generate a plan.</p>
+                  </div>
+                )
+              })()
             ) : (
               expandedMessage ? (
                 <div className="expanded-message">

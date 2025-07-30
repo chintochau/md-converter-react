@@ -671,3 +671,50 @@
 .expanded-message-content a:hover {
   text-decoration: underline;
 }
+
+/* Reasoning mode progress styles */
+.reasoning-progress {
+  background: #f0f9ff;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.reasoning-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: #1f2937;
+}
+
+.reasoning-step:last-child {
+  margin-bottom: 0;
+}
+
+.step-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.reasoning-steps {
+  margin: 8px 0 0 28px;
+  padding-left: 16px;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.reasoning-steps li {
+  margin: 4px 0;
+}
+
+.execution-results {
+  margin: 8px 0 0 28px;
+  font-size: 14px;
+  color: #059669;
+}
+
+.execution-item {
+  margin: 4px 0;
+}
