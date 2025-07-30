@@ -5,7 +5,7 @@ import ExerciseList from './ExerciseList'
 import { Zap, Brain } from 'lucide-react'
 import './ExerciseChat.css'
 
-function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
+function ExerciseChat({ sessionId, setSessionId, model, setModel, environment }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -15,6 +15,7 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
   const [useReasoning, setUseReasoning] = useState(false)
   const [rightPanelTab, setRightPanelTab] = useState('exercises')
   const [expandedMessage, setExpandedMessage] = useState(null)
+  const [selectedModel, setSelectedModel] = useState('gpt-4.1')
   const abortControllerRef = useRef(null)
   const messagesEndRef = useRef(null)
   
@@ -103,6 +104,11 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
       // Add reasoning_mode if enabled
       if (useReasoning) {
         url += `&reasoning_mode=true`
+      }
+      
+      // Add model if selected
+      if (selectedModel) {
+        url += `&model=${encodeURIComponent(selectedModel)}`
       }
       
       console.log('Streaming request to:', {
@@ -217,7 +223,7 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
     setMessages(prev => [...prev, newMessage])
     
     try {
-      const data = await fetchExercisePlan(userQuery, sessionId, environment, useReasoning)
+      const data = await fetchExercisePlan(userQuery, sessionId, environment, useReasoning, selectedModel)
       
       if (data.output) {
         marked.setOptions({ 
@@ -356,25 +362,37 @@ function ExerciseChat({ sessionId, setSessionId, setModel, environment }) {
                 Error: {error}
               </div>
             )}
-            <div className="toggle-buttons">
-              <button
-                type="button"
-                className={`toggle-button ${useStreaming ? 'active' : ''}`}
-                onClick={() => setUseStreaming(!useStreaming)}
-                title="Use streaming response"
+            <div className="form-controls">
+              <div className="toggle-buttons">
+                <button
+                  type="button"
+                  className={`toggle-button ${useStreaming ? 'active' : ''}`}
+                  onClick={() => setUseStreaming(!useStreaming)}
+                  title="Use streaming response"
+                >
+                  <Zap size={16} />
+                  Streaming
+                </button>
+                <button
+                  type="button"
+                  className={`toggle-button ${useReasoning ? 'active' : ''}`}
+                  onClick={() => setUseReasoning(!useReasoning)}
+                  title="Reasoning mode"
+                >
+                  <Brain size={16} />
+                  Reasoning
+                </button>
+              </div>
+              <select 
+                className="model-selector"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
               >
-                <Zap size={16} />
-                Stream
-              </button>
-              <button
-                type="button"
-                className={`toggle-button ${useReasoning ? 'active' : ''}`}
-                onClick={() => setUseReasoning(!useReasoning)}
-                title="Reasoning mode"
-              >
-                <Brain size={16} />
-                Reasoning
-              </button>
+                <option value="gpt-4.1">gpt-4.1</option>
+                <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                <option value="gpt-4o">gpt-4o</option>
+                <option value="gpt-4o-mini">gpt-4o-mini</option>
+              </select>
             </div>
             <div className="input-group">
               <input

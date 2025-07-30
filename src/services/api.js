@@ -1,14 +1,6 @@
 const API_CONFIGS = {
-  'production-v1.2': {
-    baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.2',
-    apiKey: 'wibbi-api-key'
-  },
   'production-v1.3': {
     baseUrl: 'http://node6898-env-8937861.ca-east.onfullhost.cloud:11008/api/v1.3',
-    apiKey: 'wibbi-api-key'
-  },
-  'localhost-v1.2': {
-    baseUrl: 'http://localhost:3000/api/v1.2',
     apiKey: 'wibbi-api-key'
   },
   'localhost-v1.3': {
@@ -17,7 +9,7 @@ const API_CONFIGS = {
   }
 }
 
-export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2', reasoningMode = false) => {
+export const fetchExercisePlan = async (prompt, sessionId = null, environment = 'production-v1.2', reasoningMode = false, model = null) => {
   const config = API_CONFIGS[environment] || API_CONFIGS['production-v1.2']
   try {
     const requestBody = { prompt };
@@ -26,6 +18,9 @@ export const fetchExercisePlan = async (prompt, sessionId = null, environment = 
     }
     if (reasoningMode) {
       requestBody.reasoning_mode = true;
+    }
+    if (model) {
+      requestBody.model = model;
     }
     
     console.log('Fetching exercise plan with:', {

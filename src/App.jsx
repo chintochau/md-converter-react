@@ -103,7 +103,6 @@ function App() {
         {activeTab === 'exercise' && sessionId && (
           <div className="session-info">
             <span className="session-id">Session: {sessionId}</span>
-            {model && <span className="model-info">Model: {model}</span>}
             <button 
               className="new-session-btn" 
               onClick={() => {
